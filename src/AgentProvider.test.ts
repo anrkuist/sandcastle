@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join, posix } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  antigravity,
   claudeCode,
   codex,
   copilot,
@@ -17,6 +18,66 @@ import type { BindMountSandboxHandle } from "./SandboxProvider.js";
 const opts = (prompt: string): AgentCommandOptions => ({
   prompt,
   dangerouslySkipPermissions: true,
+});
+
+describe("antigravity factory", () => {
+  it("returns a provider with name 'antigravity'", () => {
+    const provider = antigravity("gemini-3.5-flash");
+    expect(provider.name).toBe("antigravity");
+  });
+
+  it("buildPrintCommand uses agy --print and delivers prompt via stdin", () => {
+    const provider = antigravity("gemini-3.5-flash");
+    const { command, stdin } = provider.buildPrintCommand({
+      prompt: "do something",
+      dangerouslySkipPermissions: false,
+    });
+    expect(command).toBe("agy --print");
+    expect(stdin).toBe("do something");
+  });
+
+  it("buildPrintCommand includes dangerously skip permissions flag", () => {
+    const provider = antigravity("gemini-3.5-flash");
+    const { command } = provider.buildPrintCommand({
+      prompt: "do something",
+      dangerouslySkipPermissions: true,
+    });
+    expect(command).toBe("agy --print --dangerously-skip-permissions");
+  });
+
+  it("buildPrintCommand includes resume flag", () => {
+    const provider = antigravity("gemini-3.5-flash");
+    const { command } = provider.buildPrintCommand({
+      prompt: "do something",
+      dangerouslySkipPermissions: true,
+      resumeSession: "test-convo-id",
+    });
+    expect(command).toBe(
+      "agy --print --dangerously-skip-permissions --conversation 'test-convo-id'",
+    );
+  });
+
+  it("buildInteractiveArgs returns correct interactive command flags", () => {
+    const provider = antigravity("gemini-3.5-flash");
+    const args1 = provider.buildInteractiveArgs!({
+      prompt: "hello",
+      dangerouslySkipPermissions: false,
+    });
+    expect(args1).toEqual(["agy", "-i", "hello"]);
+
+    const args2 = provider.buildInteractiveArgs!({
+      prompt: "",
+      dangerouslySkipPermissions: true,
+    });
+    expect(args2).toEqual(["agy", "--dangerously-skip-permissions", "-i"]);
+  });
+
+  it("parseStreamLine returns text delta event", () => {
+    const provider = antigravity("gemini-3.5-flash");
+    expect(provider.parseStreamLine("Hello world")).toEqual([
+      { type: "text", text: "Hello world\n" },
+    ]);
+  });
 });
 
 describe("claudeCode factory", () => {

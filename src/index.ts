@@ -51,6 +51,7 @@ export type {
 } from "./Output.js";
 export { CwdError } from "./CwdError.js";
 export {
+  antigravity,
   claudeCode,
   codex,
   copilot,
@@ -62,6 +63,7 @@ export type {
   AgentProvider,
   AgentCommandOptions,
   PrintCommand,
+  AntigravityOptions,
   ClaudeCodeOptions,
   CodexOptions,
   CopilotOptions,

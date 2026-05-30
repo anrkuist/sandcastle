@@ -1156,3 +1156,60 @@ export const claudeCode = (
     return undefined;
   },
 });
+
+// ---------------------------------------------------------------------------
+// Antigravity agent provider
+// ---------------------------------------------------------------------------
+
+/** Options for the antigravity agent provider. */
+export interface AntigravityOptions {
+  /** Environment variables injected by this agent provider. */
+  readonly env?: Record<string, string>;
+}
+
+export const antigravity = (
+  model: string,
+  options?: AntigravityOptions,
+): AgentProvider => ({
+  name: "antigravity",
+  env: options?.env ?? {},
+  captureSessions: false,
+
+  buildPrintCommand({
+    prompt,
+    dangerouslySkipPermissions,
+    resumeSession,
+  }: AgentCommandOptions): PrintCommand {
+    const skipPerms = dangerouslySkipPermissions
+      ? " --dangerously-skip-permissions"
+      : "";
+    const resumeFlag = resumeSession
+      ? ` --conversation ${shellEscape(resumeSession)}`
+      : "";
+    return {
+      command: `agy --print${skipPerms}${resumeFlag}`,
+      stdin: prompt,
+    };
+  },
+
+  buildInteractiveArgs({
+    prompt,
+    dangerouslySkipPermissions,
+  }: AgentCommandOptions): string[] {
+    const args = ["agy"];
+    if (dangerouslySkipPermissions) {
+      args.push("--dangerously-skip-permissions");
+    }
+    if (prompt) {
+      args.push("-i", prompt);
+    } else {
+      args.push("-i");
+    }
+    return args;
+  },
+
+  parseStreamLine(line: string): ParsedStreamEvent[] {
+    if (!line.trim()) return [];
+    return [{ type: "text", text: line + "\n" }];
+  },
+});
